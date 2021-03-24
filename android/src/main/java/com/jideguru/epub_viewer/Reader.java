@@ -3,6 +3,7 @@ package com.jideguru.epub_viewer;
 import android.content.Context;
 import android.util.Log;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.folioreader.Config;
@@ -20,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
@@ -32,9 +34,12 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
     private Context context;
     public MethodChannel.Result result;
     private EventChannel.EventSink pageEventSink;
+    private EventChannel.EventSink highlightsEventSink;
     private BinaryMessenger messenger;
     private ReadLocator  read_locator;
+    private ArrayList<HighLight> highlightList;
     private static final String PAGE_CHANNEL = "page";
+    private static final String HIGHLIGHTS_CHANNEL = "highlights";
 
     Reader(Context context, BinaryMessenger messenger,ReaderConfig config){
         this.context = context;
@@ -48,9 +53,10 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
 
      
         setPageHandler(messenger);
+        setHighlightsHandler(messenger);
     }
 
-    public void open(String bookPath, String lastLocation){
+    public void open(String bookPath, String lastLocation, final String highlights){
         final String path = bookPath;
         final String location = lastLocation;
         new Thread(new Runnable() {
@@ -58,6 +64,12 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
             public void run() {
                try {
                    Log.i("SavedLocation", "-> savedLocation -> " + location);
+                   try {
+                       readHighlights(highlights);
+                   } catch (Exception e) {
+                       Log.e("Reader", "Error reading highlights " + e.getMessage());
+                       e.printStackTrace();
+                   }
                    if(location != null && !location.isEmpty()){
                        ReadLocator readLocator = ReadLocator.fromJson(location);
                        folioReader.setReadLocator(readLocator);
@@ -76,7 +88,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
         folioReader.close();
     }
 
-    private void setPageHandler(BinaryMessenger messenger){
+    private void setPageHandler(BinaryMessenger messenger) {
 //        final MethodChannel channel = new MethodChannel(registrar.messenger(), "page");
 //        channel.setMethodCallHandler(new EpubKittyPlugin());
         new EventChannel(messenger,PAGE_CHANNEL).setStreamHandler(new EventChannel.StreamHandler() {
@@ -92,31 +104,53 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
         });
     }
 
+    private void setHighlightsHandler(BinaryMessenger messenger) {
+        new EventChannel(messenger,HIGHLIGHTS_CHANNEL).setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object o, EventChannel.EventSink eventSink) {
+                highlightsEventSink = eventSink;
+            }
+
+            @Override
+            public void onCancel(Object o) {
+
+            }
+        });
+    }
+
     private void getHighlightsAndSave() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ArrayList<HighLight> highlightList = null;
-                ObjectMapper objectMapper = new ObjectMapper();
-                try {
-                    highlightList = objectMapper.readValue(
-                            loadAssetTextAsString("highlights/highlights_data.json"),
-                            new TypeReference<List<HighlightData>>() {
-                            });
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                if (highlightList == null) {
-                    folioReader.saveReceivedHighLights(highlightList, new OnSaveHighlight() {
-                        @Override
-                        public void onFinished() {
-                            //You can do anything on successful saving highlight list
-                        }
-                    });
-                }
+                readHighlights(null);
             }
         }).start();
+    }
+
+    private void readHighlights(String highlights) {
+        ArrayList<HighLight> highlightList = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String json = highlights;
+            if (json == null) {
+                json = loadAssetTextAsString("highlights/highlights_data.json");
+            }
+            highlightList = objectMapper.readValue(json,
+                    new TypeReference<List<HighlightData>>() {
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (highlightList == null) {
+            final ArrayList<HighLight> finalHighlightList = highlightList;
+            folioReader.saveReceivedHighLights(finalHighlightList, new OnSaveHighlight() {
+                @Override
+                public void onFinished() {
+                    Reader.this.highlightList = finalHighlightList;
+                }
+            });
+        }
     }
 
 
@@ -158,11 +192,33 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
         if (pageEventSink != null){
             pageEventSink.success(read_locator.toJson());
         }
+        if (highlightsEventSink != null){
+            highlightsEventSink.success(highlightsJson());
+        }
     }
 
     @Override
-    public void onHighlight(HighLight highlight, HighLight.HighLightAction type) {
-
+    public void onHighlight(final HighLight highlight, HighLight.HighLightAction type) {
+        switch (type) {
+            case NEW:
+                highlightList.add(highlight);
+                break;
+            case DELETE:
+                highlightList.remove(highlight);
+                break;
+            case MODIFY:
+                for(int i=0; i < highlightList.size();i++) {
+                    if (highlightList.get(i).getUUID().equals(highlight.getUUID())){
+                        highlightList.remove(i);
+                        break;
+                    }
+                }
+                highlightList.add(highlight);
+                break;
+        }
+        if (highlightsEventSink != null){
+            highlightsEventSink.success(highlightsJson());
+        }
     }
 
     @Override
@@ -170,5 +226,13 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
         read_locator = readLocator;
     }
 
-
+    private String highlightsJson() {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            return objectMapper.writeValueAsString(highlightList);
+        } catch (Exception e) {
+            return  null;
+        }
+    }
 }

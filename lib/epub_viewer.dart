@@ -1,20 +1,22 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:epub_viewer/model/highlight_data.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'model/enum/epub_scroll_direction.dart';
-
 part 'model/epub_locator.dart';
-
 part 'utils/util.dart';
 
 class EpubViewer {
   static const MethodChannel _channel = const MethodChannel('epub_viewer');
   static const EventChannel _pageChannel = const EventChannel('page');
+  static const EventChannel _highlightsChannel =
+      const EventChannel('highlights');
 
   /// Configure Viewer's with available values
   ///
@@ -42,9 +44,13 @@ class EpubViewer {
 
   /// bookPath should be a local file.
   /// Last location is only available for android.
-  static void open(String bookPath, {EpubLocator lastLocation}) async {
+  static void open(String bookPath,
+      {List<HighlightData> highlights, EpubLocator lastLocation}) async {
     Map<String, dynamic> agrs = {
       "bookPath": bookPath,
+      'highlights': highlights == null
+          ? '[]'
+          : jsonEncode(highlights.map((e) => e.toJson()).toList()),
       'lastLocation':
           lastLocation == null ? '' : jsonEncode(lastLocation.toJson()),
     };
@@ -53,10 +59,14 @@ class EpubViewer {
 
   /// bookPath should be an asset file path.
   /// Last location is only available for android.
-  static Future openAsset(String bookPath, {EpubLocator lastLocation}) async {
+  static Future openAsset(String bookPath,
+      {List<HighlightData> highlights, EpubLocator lastLocation}) async {
     if (extension(bookPath) == '.epub') {
       Map<String, dynamic> agrs = {
         "bookPath": (await Util.getFileFromAsset(bookPath)).path,
+        'highlights': highlights == null
+            ? '[]'
+            : jsonEncode(highlights.map((e) => e.toJson()).toList()),
         'lastLocation':
             lastLocation == null ? '' : jsonEncode(lastLocation.toJson()),
       };
@@ -73,5 +83,18 @@ class EpubViewer {
         .map((value) => Platform.isAndroid ? value : '{}');
 
     return pageStream;
+  }
+
+  /// Stream to get EpubLocator for android and pageNumber for iOS
+  static Stream get highlightsStream {
+    Stream highlightsStream = _highlightsChannel
+        .receiveBroadcastStream()
+        .where((event) => event is String)
+        .cast<String>()
+        .asyncMap((value) {
+      final json = compute(jsonDecode, value) as List;
+      return json.map((e) => HighlightData.fromJson(e)).toList();
+    });
+    return highlightsStream;
   }
 }
