@@ -44,10 +44,11 @@ class EpubViewer {
 
   /// bookPath should be a local file.
   /// Last location is only available for android.
-  static void open(String bookPath,
+  static void open(String bookPath, String bookId,
       {List<HighlightData> highlights, EpubLocator lastLocation}) async {
     Map<String, dynamic> agrs = {
       "bookPath": bookPath,
+      "bookId": bookId,
       'highlights': highlights == null
           ? '[]'
           : jsonEncode(highlights.map((e) => e.toJson()).toList()),
@@ -59,11 +60,12 @@ class EpubViewer {
 
   /// bookPath should be an asset file path.
   /// Last location is only available for android.
-  static Future openAsset(String bookPath,
+  static Future openAsset(String bookPath, String bookId,
       {List<HighlightData> highlights, EpubLocator lastLocation}) async {
     if (extension(bookPath) == '.epub') {
       Map<String, dynamic> agrs = {
         "bookPath": (await Util.getFileFromAsset(bookPath)).path,
+        "bookId": bookId,
         'highlights': highlights == null
             ? '[]'
             : jsonEncode(highlights.map((e) => e.toJson()).toList()),

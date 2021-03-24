@@ -51,11 +51,12 @@ public class EpubViewerPlugin implements MethodCallHandler {
 
       Map<String,Object> arguments = (Map<String, Object>) call.arguments;
       String bookPath = arguments.get("bookPath").toString();
+      String bookId = arguments.get("bookId").toString();
       String highlights = arguments.get("highlights").toString();
       String lastLocation = arguments.get("lastLocation").toString();
 
       reader = new Reader(context,messenger,config);
-      reader.open(bookPath, lastLocation, highlights);
+      reader.open(bookPath, bookId, lastLocation, highlights);
 
     }else if(call.method.equals("close")){
       reader.close();

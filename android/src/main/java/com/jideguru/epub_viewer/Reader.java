@@ -56,9 +56,10 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
         setHighlightsHandler(messenger);
     }
 
-    public void open(String bookPath, String lastLocation, final String highlights){
+    public void open(String bookPath, String bookId, String lastLocation, final String highlights){
         final String path = bookPath;
         final String location = lastLocation;
+        final String id = bookId;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -75,7 +76,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
                        folioReader.setReadLocator(readLocator);
                    }
                    folioReader.setConfig(readerConfig.config, true)
-                           .openBook(path);  
+                           .openBook(path, id);
                } catch (Exception e) {
                    e.printStackTrace();
                }
