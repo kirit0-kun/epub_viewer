@@ -32,16 +32,18 @@ class HighlightData {
   Map<String, dynamic> toJson() => _$HighlightDataToJson(this);
 }
 
-String toFolioDateFormat(DateTime dateTime) {
+int toFolioDateFormat(DateTime dateTime) {
   if (dateTime == null) return null;
+  return dateTime.millisecondsSinceEpoch;
   final DateFormat formatter = DateFormat('MMM dd, yyyy | HH:mm');
-  final String formatted = formatter.format(dateTime);
-  return formatted;
+  // final String formatted = formatter.format(dateTime);
+  // return formatted;
 }
 
-DateTime fromFolioDate(String json) {
-  if (json?.isNotEmpty != true) return null;
-  final DateFormat formatter = DateFormat('MMM dd, yyyy | HH:mm');
-  final DateTime formatted = formatter.parseLoose(json);
-  return formatted;
+DateTime fromFolioDate(int json) {
+  if (json == null) return null;
+  return DateTime.fromMillisecondsSinceEpoch(json);
+  // final DateFormat formatter = DateFormat('MMM dd, yyyy | HH:mm');
+  // final DateTime formatted = formatter.parseLoose(json);
+  // return formatted;
 }

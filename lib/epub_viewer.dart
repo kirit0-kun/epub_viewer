@@ -8,6 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'model/enum/highlight_action.dart';
+import 'model/highlight_change.dart';
+
 part 'model/enum/epub_scroll_direction.dart';
 part 'model/epub_locator.dart';
 part 'utils/util.dart';
@@ -17,6 +20,8 @@ class EpubViewer {
   static const EventChannel _pageChannel = const EventChannel('page');
   static const EventChannel _highlightsChannel =
       const EventChannel('highlights');
+  static const EventChannel _highlightChangesChannel =
+      const EventChannel('highlightsChanges');
 
   /// Configure Viewer's with available values
   ///
@@ -79,23 +84,38 @@ class EpubViewer {
   }
 
   /// Stream to get EpubLocator for android and pageNumber for iOS
-  static Stream get locatorStream {
-    Stream pageStream = _pageChannel
+  static Stream<EpubLocator> get locatorStream {
+    Stream<EpubLocator> pageStream = _pageChannel
         .receiveBroadcastStream()
-        .map((value) => Platform.isAndroid ? value : '{}');
-
+        .map((value) => Platform.isAndroid ? EpubLocator.fromJson(jsonDecode(value)) : EpubLocator());
     return pageStream;
   }
 
   /// Stream to get EpubLocator for android and pageNumber for iOS
-  static Stream get highlightsStream {
-    Stream highlightsStream = _highlightsChannel
+  static Stream<List<HighlightData>> get highlightsStream {
+    Stream<List<HighlightData>> highlightsStream = _highlightsChannel
         .receiveBroadcastStream()
         .where((event) => event is String)
         .cast<String>()
-        .asyncMap((value) {
-      final json = compute(jsonDecode, value) as List;
+        .asyncMap((value) async {
+      final json = await compute(jsonDecode, value) as List;
       return json.map((e) => HighlightData.fromJson(e)).toList();
+    });
+    return highlightsStream;
+  }
+
+  static Stream<HighlightChange> get highlightChangesChannel {
+    Stream<HighlightChange> highlightsStream = _highlightChangesChannel
+        .receiveBroadcastStream()
+        .where((event) => event is String)
+        .cast<String>()
+        .asyncMap((value) async {
+      final json = await compute(jsonDecode, value);
+      final actionString = json['action'];
+      final action = getAction(actionString);
+      final highlightMap = json['highlight'];
+      final highlight = HighlightData.fromJson(highlightMap);
+      return HighlightChange(highlight, action);
     });
     return highlightsStream;
   }

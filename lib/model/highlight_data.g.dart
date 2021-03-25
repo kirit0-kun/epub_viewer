@@ -10,7 +10,7 @@ HighlightData _$HighlightDataFromJson(Map<String, dynamic> json) {
   return HighlightData(
     bookId: json['bookId'] as String,
     content: json['content'] as String,
-    date: fromFolioDate(json['date'] as String),
+    date: fromFolioDate(json['date'] as int),
     type: json['type'] as String,
     pageNumber: json['pageNumber'] as int,
     pageId: json['pageId'] as String,

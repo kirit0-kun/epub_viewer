@@ -22,12 +22,12 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-
+import com.jideguru.epub_viewer.*;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 
-public class Reader implements OnHighlightListener, ReadLocatorListener, FolioReader.OnClosedListener{
+public class Reader implements OnHighlightListener, ReadLocatorListener, FolioReader.OnClosedListener {
 
     private ReaderConfig readerConfig;
     public FolioReader folioReader;
@@ -35,11 +35,13 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
     public MethodChannel.Result result;
     private EventChannel.EventSink pageEventSink;
     private EventChannel.EventSink highlightsEventSink;
+    private EventChannel.EventSink highlightChangeEventSink;
     private BinaryMessenger messenger;
     private ReadLocator  read_locator;
     private ArrayList<HighLight> highlightList;
     private static final String PAGE_CHANNEL = "page";
     private static final String HIGHLIGHTS_CHANNEL = "highlights";
+    private static final String HIGHLIGHT_CHANGE_CHANNEL = "highlightsChanges";
 
     Reader(Context context, BinaryMessenger messenger,ReaderConfig config){
         this.context = context;
@@ -54,6 +56,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
      
         setPageHandler(messenger);
         setHighlightsHandler(messenger);
+        setHighlightChangeHandler(messenger);
     }
 
     public void open(String bookPath, String bookId, String lastLocation, final String highlights){
@@ -119,6 +122,20 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
         });
     }
 
+    private void setHighlightChangeHandler(BinaryMessenger messenger) {
+        new EventChannel(messenger,HIGHLIGHT_CHANGE_CHANNEL).setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object o, EventChannel.EventSink eventSink) {
+                highlightChangeEventSink = eventSink;
+            }
+
+            @Override
+            public void onCancel(Object o) {
+
+            }
+        });
+    }
+
     private void getHighlightsAndSave() {
         new Thread(new Runnable() {
             @Override
@@ -129,6 +146,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
     }
 
     private void readHighlights(String highlights) {
+        Reader.this.highlightList = new ArrayList<>(10);
         ArrayList<HighLight> highlightList = null;
         ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -148,7 +166,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
             folioReader.saveReceivedHighLights(finalHighlightList, new OnSaveHighlight() {
                 @Override
                 public void onFinished() {
-                    Reader.this.highlightList = finalHighlightList;
+                    Reader.this.highlightList.addAll(finalHighlightList);
                 }
             });
         }
@@ -200,12 +218,15 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
 
     @Override
     public void onHighlight(final HighLight highlight, HighLight.HighLightAction type) {
+        String action = "";
         switch (type) {
             case NEW:
                 highlightList.add(highlight);
+                action = "new";
                 break;
             case DELETE:
                 highlightList.remove(highlight);
+                action = "delete";
                 break;
             case MODIFY:
                 for(int i=0; i < highlightList.size();i++) {
@@ -215,16 +236,30 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, FolioRe
                     }
                 }
                 highlightList.add(highlight);
+                action = "modify";
                 break;
         }
         if (highlightsEventSink != null){
             highlightsEventSink.success(highlightsJson());
+        }
+        if (highlightChangeEventSink != null){
+            highlightChangeEventSink.success("{\"action\":\""+ action + "\", \"highlight\":" + highlightJson(highlight) + "}");
         }
     }
 
     @Override
     public void saveReadLocator(ReadLocator readLocator) {
         read_locator = readLocator;
+    }
+
+    private String highlightJson(HighLight highlight) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            return objectMapper.writeValueAsString(highlight);
+        } catch (Exception e) {
+            return  null;
+        }
     }
 
     private String highlightsJson() {
