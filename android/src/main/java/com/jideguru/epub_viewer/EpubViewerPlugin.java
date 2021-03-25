@@ -42,16 +42,16 @@ public class EpubViewerPlugin implements MethodCallHandler {
   public static void setAppLocale(String language) {
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      Resources resources = activity.getResources();
+      Resources resources = context.getResources();
       Configuration configuration = resources.getConfiguration();
       configuration.setLocale(new Locale(language));
-      activity.getApplicationContext().createConfigurationContext(configuration);
+      context.getApplicationContext().createConfigurationContext(configuration);
     } else {
       Locale locale = new Locale(language);
       Locale.setDefault(locale);
-      Configuration config = activity.getResources().getConfiguration();
+      Configuration config = context.getResources().getConfiguration();
       config.locale = locale;
-      activity.getResources().updateConfiguration(config,
+      context.getResources().updateConfiguration(config,
               activity.getResources().getDisplayMetrics());
     }
 
