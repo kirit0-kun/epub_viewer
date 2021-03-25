@@ -1,8 +1,13 @@
 package com.jideguru.epub_viewer;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.os.Build;
 
+import java.util.Locale;
 import java.util.Map;
 
 import io.flutter.plugin.common.BinaryMessenger;
@@ -33,8 +38,29 @@ public class EpubViewerPlugin implements MethodCallHandler {
     channel.setMethodCallHandler(new EpubViewerPlugin());
   }
 
+  @SuppressLint("ObsoleteSdkInt")
+  public static void setAppLocale(String language) {
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+      Resources resources = activity.getResources();
+      Configuration configuration = resources.getConfiguration();
+      configuration.setLocale(new Locale(language));
+      activity.getApplicationContext().createConfigurationContext(configuration);
+    } else {
+      Locale locale = new Locale(language);
+      Locale.setDefault(locale);
+      Configuration config = activity.getResources().getConfiguration();
+      config.locale = locale;
+      activity.getResources().updateConfiguration(config,
+              activity.getResources().getDisplayMetrics());
+    }
+
+  }
+
   @Override
   public void onMethodCall(MethodCall call, Result result) {
+
+    setAppLocale("en");
 
     if (call.method.equals("setConfig")){
       Map<String,Object> arguments = (Map<String, Object>) call.arguments;
