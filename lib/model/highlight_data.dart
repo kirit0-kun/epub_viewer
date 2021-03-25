@@ -16,7 +16,7 @@ class HighlightData {
   final String uuid;
   final String note;
 
-  HighlightData(
+  const HighlightData(
       {this.bookId,
       this.content,
       this.date,

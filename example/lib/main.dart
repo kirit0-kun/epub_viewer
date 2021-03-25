@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -75,6 +74,7 @@ class _MyAppState extends State<MyApp> {
 
                     await EpubViewer.openAsset(
                       'assets/4.epub',
+                      "0",
                       lastLocation: EpubLocator.fromJson({
                         "bookId": "2239",
                         "href": "/OEBPS/ch06.xhtml",
@@ -86,8 +86,7 @@ class _MyAppState extends State<MyApp> {
                     );
                     // get current locator
                     EpubViewer.locatorStream.listen((locator) {
-                      print(
-                          'LOCATOR: ${EpubLocator.fromJson(jsonDecode(locator))}');
+                      print('LOCATOR: $locator');
                     });
                   },
                   child: Container(
