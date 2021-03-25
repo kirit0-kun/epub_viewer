@@ -36,7 +36,7 @@ android {
 
 dependencies {
 //    implementation "com.jideguru:folioreader:0.6.3"
-    implementation 'com.github.kirit0-kun:Folioreader-Android:master'
+    implementation 'com.github.kirit0-kun:FolioReader-Android:master'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.9.8'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
 }
