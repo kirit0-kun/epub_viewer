@@ -202,7 +202,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
     }
 
     private void readBookmarks(String bookmarks) {
-        Reader.this.highlightList = new ArrayList<>(10);
+        Reader.this.bookmarkList = new ArrayList<>(10);
         ArrayList<Bookmark> bookmarkList = null;
         ObjectMapper objectMapper = new ObjectMapper();
         try {
