@@ -222,7 +222,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
         try {
             String json = bookmarks;
             if (json == null) {
-                json = loadAssetTextAsString("highlights/highlights_data.json");
+                json = loadAssetTextAsString("bookmarks/bookmarks_data.json");
             }
             bookmarkList = objectMapper.readValue(json,
                     new TypeReference<List<BookmarkData>>() {
