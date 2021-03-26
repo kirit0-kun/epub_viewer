@@ -111,8 +111,6 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
     }
 
     private void setPageHandler(BinaryMessenger messenger) {
-//        final MethodChannel channel = new MethodChannel(registrar.messenger(), "page");
-//        channel.setMethodCallHandler(new EpubKittyPlugin());
         new EventChannel(messenger,PAGE_CHANNEL).setStreamHandler(new EventChannel.StreamHandler() {
             @Override
             public void onListen(Object o, EventChannel.EventSink eventSink) {
@@ -126,8 +124,6 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
         });
     }
     private void setProgressHandler(BinaryMessenger messenger) {
-//        final MethodChannel channel = new MethodChannel(registrar.messenger(), "page");
-//        channel.setMethodCallHandler(new EpubKittyPlugin());
         new EventChannel(messenger,PROGRESS_CHANNEL).setStreamHandler(new EventChannel.StreamHandler() {
             @Override
             public void onListen(Object o, EventChannel.EventSink eventSink) {
@@ -208,7 +204,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
             e.printStackTrace();
         }
 
-        if (highlightList == null) {
+        if (highlightList != null) {
             final ArrayList<HighLight> finalHighlightList = highlightList;
             folioReader.saveReceivedHighLights(finalHighlightList, new OnSaveHighlight() {
                 @Override
@@ -235,7 +231,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
             e.printStackTrace();
         }
 
-        if (bookmarkList == null) {
+        if (bookmarkList != null) {
             final ArrayList<Bookmark> finalBookmarkList = bookmarkList;
             folioReader.saveReceivedBookmarks(finalBookmarkList, new OnSaveBookmark() {
                 @Override

@@ -109,7 +109,7 @@ class EpubViewer {
   }
 
   /// Stream to get EpubLocator for android and pageNumber for iOS
-  static Stream<double> get progressChannel {
+  static Stream<double> get progressStream {
     Stream<double> pageStream = _progressChannel
         .receiveBroadcastStream()
         .map((value) => value as double);
@@ -129,7 +129,7 @@ class EpubViewer {
     return highlightsStream;
   }
 
-  static Stream<HighlightChange> get highlightChangesChannel {
+  static Stream<HighlightChange> get highlightChangesStream {
     Stream<HighlightChange> highlightsStream = _highlightChangesChannel
         .receiveBroadcastStream()
         .where((event) => event is String)
@@ -145,7 +145,7 @@ class EpubViewer {
     return highlightsStream;
   }
 
-  static Stream<BookmarkChange> get bookmarksChangesChannel {
+  static Stream<BookmarkChange> get bookmarksChangesStream {
     Stream<BookmarkChange> highlightsStream = _bookmarksChangesChannel
         .receiveBroadcastStream()
         .where((event) => event is String)
