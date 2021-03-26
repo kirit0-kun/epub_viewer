@@ -37,6 +37,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
     private Context context;
     public MethodChannel.Result result;
     private EventChannel.EventSink pageEventSink;
+    private EventChannel.EventSink progressEventSink;
     private EventChannel.EventSink highlightsEventSink;
     private EventChannel.EventSink highlightChangeEventSink;
     private EventChannel.EventSink bookmarkChangeEventSink;
@@ -45,6 +46,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
     private ArrayList<HighLight> highlightList;
     private ArrayList<Bookmark> bookmarkList;
     private static final String PAGE_CHANNEL = "page";
+    private static final String PROGRESS_CHANNEL = "progress";
     private static final String HIGHLIGHTS_CHANNEL = "highlights";
     private static final String HIGHLIGHT_CHANGE_CHANNEL = "highlightsChanges";
     private static final String BOOKMARK_CHANGE_CHANNEL = "bookmarksChanges";
@@ -63,6 +65,7 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
 
      
         setPageHandler(messenger);
+        setProgressHandler(messenger);
         setHighlightsHandler(messenger);
         setHighlightChangeHandler(messenger);
         setBookmarkChangeHandler(messenger);
@@ -114,6 +117,21 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
             @Override
             public void onListen(Object o, EventChannel.EventSink eventSink) {
                 pageEventSink = eventSink;
+            }
+
+            @Override
+            public void onCancel(Object o) {
+
+            }
+        });
+    }
+    private void setProgressHandler(BinaryMessenger messenger) {
+//        final MethodChannel channel = new MethodChannel(registrar.messenger(), "page");
+//        channel.setMethodCallHandler(new EpubKittyPlugin());
+        new EventChannel(messenger,PROGRESS_CHANNEL).setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object o, EventChannel.EventSink eventSink) {
+                progressEventSink = eventSink;
             }
 
             @Override
@@ -228,6 +246,12 @@ public class Reader implements OnHighlightListener, ReadLocatorListener, OnBookm
         }
     }
 
+    @Override
+    public void updateProgression(double progress) {
+        if (progressEventSink != null){
+            progressEventSink.success(progress);
+        }
+    }
 
     private String loadAssetTextAsString(String name) {
         BufferedReader in = null;

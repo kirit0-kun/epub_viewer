@@ -21,6 +21,7 @@ part 'utils/util.dart';
 class EpubViewer {
   static const MethodChannel _channel = const MethodChannel('epub_viewer');
   static const EventChannel _pageChannel = const EventChannel('page');
+  static const EventChannel _progressChannel = const EventChannel('progress');
   static const EventChannel _highlightsChannel =
       const EventChannel('highlights');
   static const EventChannel _highlightChangesChannel =
@@ -104,6 +105,14 @@ class EpubViewer {
         (value) => Platform.isAndroid
             ? EpubLocator.fromJson(jsonDecode(value))
             : EpubLocator());
+    return pageStream;
+  }
+
+  /// Stream to get EpubLocator for android and pageNumber for iOS
+  static Stream<double> get progressChannel {
+    Stream<double> pageStream = _progressChannel
+        .receiveBroadcastStream()
+        .map((value) => value as double);
     return pageStream;
   }
 
